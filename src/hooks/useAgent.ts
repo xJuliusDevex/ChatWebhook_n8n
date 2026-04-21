@@ -97,7 +97,8 @@ export const useAgent = (url: string = 'ws://127.0.0.1:8000/ws/chat') => {
 
     // Integramos el Webhook de n8n
     try {
-      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://xjuliusx25.app.n8n.cloud/webhook-test/fdfa9cf5-55f2-40ac-a942-8af9a090c866';
+      console.log('🔗 ENV VITE_N8N_WEBHOOK_URL:', import.meta.env.VITE_N8N_WEBHOOK_URL);
+      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -109,16 +110,16 @@ export const useAgent = (url: string = 'ws://127.0.0.1:8000/ws/chat') => {
 
       if (response.ok) {
         console.log('✅ Mensaje enviado al webhook de n8n.');
-        
+
         // Intentar parsear la respuesta de n8n
         try {
           const data = await response.json();
           console.log('📥 Respuesta desde n8n:', data);
-          
+
           // Asumimos que n8n devuelve { "message": "Respuesta de la IA..." } u { "output": "..." }
           // Puedes ajustar "data.message" o "data.output" según cómo lo configures en n8n
           const aiResponse = data.message || data.output || data.text || data.response || (typeof data === 'string' ? data : JSON.stringify(data));
-          
+
           setMessages((prev) => [...prev, { role: 'ai', content: aiResponse }]);
           setIsThinking(false); // Detenemos el estado de carga
         } catch (parseError) {
