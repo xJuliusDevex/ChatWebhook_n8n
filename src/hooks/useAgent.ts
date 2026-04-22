@@ -26,6 +26,7 @@ export const useAgent = (url: string = 'ws://127.0.0.1:8000/ws/chat') => {
   const [isThinking, setIsThinking] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
+  const sessionIdRef = useRef(crypto.randomUUID());
 
   useEffect(() => {
     const socket = new WebSocket(url);
@@ -99,13 +100,21 @@ export const useAgent = (url: string = 'ws://127.0.0.1:8000/ws/chat') => {
     try {
       console.log('🔗 ENV VITE_N8N_WEBHOOK_URL:', import.meta.env.VITE_N8N_WEBHOOK_URL);
       const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
+      
+      const messageId = crypto.randomUUID(); // ID único para este mensaje en particular
+      
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ message: content, timestamp: new Date().toISOString() }),
+        body: JSON.stringify({ 
+          message: content, 
+          id: messageId,
+          sessionId: sessionIdRef.current, // ID para mantener el hilo de la conversación
+          timestamp: new Date().toISOString() 
+        }),
       });
 
       if (response.ok) {
