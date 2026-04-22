@@ -116,9 +116,27 @@ export const useAgent = (url: string = 'ws://127.0.0.1:8000/ws/chat') => {
           const data = await response.json();
           console.log('📥 Respuesta desde n8n:', data);
 
-          // Asumimos que n8n devuelve { "message": "Respuesta de la IA..." } u { "output": "..." }
-          // Puedes ajustar "data.message" o "data.output" según cómo lo configures en n8n
-          const aiResponse = data.message || data.output || data.text || data.response || (typeof data === 'string' ? data : JSON.stringify(data));
+          // Lógica robusta para extraer el texto de la respuesta de n8n sin importar su estructura
+          let aiResponse: any;
+
+          if (Array.isArray(data) && data.length > 0) {
+            // A veces n8n devuelve un array con el objeto adentro: [{ message: "..." }]
+            const first = data[0];
+            aiResponse = first?.message || first?.output || first?.text || first;
+          } else {
+            // Estructura normal: { message: "..." }
+            aiResponse = data.message || data.output || data.text || data.response || data;
+          }
+
+          // Si por alguna razón n8n lo anidó doblemente (ej. { message: { message: "..." } })
+          if (typeof aiResponse === 'object' && aiResponse !== null) {
+            aiResponse = aiResponse.message || aiResponse.output || aiResponse.text || JSON.stringify(aiResponse);
+          }
+
+          // Seguro final: forzar que sea un string para evitar Error #31 de React
+          if (typeof aiResponse !== 'string') {
+            aiResponse = String(aiResponse);
+          }
 
           setMessages((prev) => [...prev, { role: 'ai', content: aiResponse }]);
           setIsThinking(false); // Detenemos el estado de carga
